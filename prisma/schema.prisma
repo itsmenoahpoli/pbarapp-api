@@ -1,0 +1,162 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgres"
+  url      = env("DATABASE_URL")
+}
+
+model UserRole {
+  // HasMany User
+  id        Int      @id @default(autoincrement())
+  name      String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  users     User[]
+}
+
+model User {
+  // BelongsTo UserRole
+  // HasMany UserOtp
+  // HasMany BusRouteTicketBookingTransaction
+  id                                Int                                @id @default(autoincrement())
+  userRoleId                        Int?
+  firstName                         String
+  lastName                          String
+  email                             String                             @unique
+  password                          String
+  lastSigninAt                      DateTime?
+  createdAt                         DateTime                           @default(now())
+  updatedAt                         DateTime                           @updatedAt
+  userRole                          UserRole?                          @relation(references: [id], fields: [userRoleId], onDelete: SetNull)
+  userOtps                          UserOtp[]
+  busRouteTicketBookingTransactions BusRouteTicketBookingTransaction[]
+}
+
+model UserOtp {
+  // BelongsTo User
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  code      String
+  isUsed    Boolean  @default(false)
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  user      User?    @relation(references: [id], fields: [userId], onDelete: Cascade)
+}
+
+model BusDriver {
+  // BelongsTo Bus
+  id        Int      @id @default(autoincrement())
+  fullname  String
+  contactNo String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  bus       Bus[]
+}
+
+model BusConductor {
+  // BelongsTo Bus
+  id        Int      @id @default(autoincrement())
+  fullname  String
+  contactNo String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  bus       Bus[]
+}
+
+model Bus {
+  // HasOne BusDriver
+  // HasOne BusConductor
+  // HasMany BusRoutes
+  id             Int          @id @default(autoincrement())
+  busDriverId    Int
+  busConductorId Int
+  busNo          String       @unique
+  plateNo        String
+  type           String
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  busDriver      BusDriver    @relation(references: [id], fields: [busDriverId], onDelete: Restrict)
+  busConductor   BusConductor @relation(references: [id], fields: [busConductorId], onDelete: Restrict)
+  busRoutes      BusRoute[]
+}
+
+model BusRoute {
+  // BelongsTo Bus
+  // HasMany BusRouteTicket
+  // HasMany BusRouteTicketBooking
+  // HasMany BusRouteTicketBookingTransaction
+  id                               Int                                @id @default(autoincrement())
+  busId                            Int
+  routeNo                          String
+  routeFrom                        String
+  routeFromPin                     String?
+  routeTo                          String
+  routeToPin                       String?
+  departureDate                    String
+  departureTime                    String
+  arrivalDate                      String
+  arrivalTime                      String
+  status                           String                             @default("draft")
+  createdAt                        DateTime                           @default(now())
+  updatedAt                        DateTime                           @updatedAt
+  bus                              Bus                                @relation(references: [id], fields: [busId], onDelete: Cascade)
+  busRouteTickets                  BusRouteTicket[]
+  busRouteTicketBookings           BusRouteTicketBooking[]
+  busRouteTicketBookingTransaction BusRouteTicketBookingTransaction[]
+}
+
+model BusRouteTicket {
+  // BelongsTo BusRoute
+  // HasMany BusRouteTicketBooking (1 transaction contains multuple BusRouteTicketBooking(per ticket bought))
+  // HasOne BusRouteTicketBookingTransaction
+  id                               Int                                @id @default(autoincrement())
+  busRouteId                       Int
+  quantity                         Int
+  price                            Int
+  type                             String
+  createdAt                        DateTime                           @default(now())
+  updatedAt                        DateTime                           @updatedAt
+  busRoute                         BusRoute                           @relation(references: [id], fields: [busRouteId], onDelete: Cascade)
+  busRouteTicketBookingTransaction BusRouteTicketBookingTransaction[]
+}
+
+model BusRouteTicketBookingTransaction {
+  // BelongsTo BusRoute
+  // BelongsTo BusRouteTicket
+  // BelongsTo User
+  // HasMany BusRouteTicketBooking (1 booking (per ticket in transaction))
+  id                     Int                     @id @default(autoincrement())
+  busRouteId             Int
+  busRouteTicketId       Int
+  userId                 Int?
+  ticketQuantity         Int
+  paymongoPaymentData    String                  @db.Text
+  createdAt              DateTime                @default(now())
+  updatedAt              DateTime                @updatedAt
+  user                   User?                   @relation(references: [id], fields: [userId], onDelete: SetNull)
+  busRoute               BusRoute                @relation(references: [id], fields: [busRouteId], onDelete: Restrict)
+  busRouteTicket         BusRouteTicket          @relation(references: [id], fields: [busRouteTicketId], onDelete: Cascade)
+  busRouteTicketBookings BusRouteTicketBooking[]
+}
+
+model BusRouteTicketBooking {
+  // BelongsTo BusRoute
+  // BelongsTo BusRouteTicketBookingTransaction
+  id                                 Int                              @id @default(autoincrement())
+  busRouteId                         Int
+  busRouteTicketBookingTransactionId Int
+  isUsed                             Boolean                          @default(false)
+  createdAt                          DateTime                         @default(now())
+  updatedAt                          DateTime                         @updatedAt
+  busRoute                           BusRoute                         @relation(references: [id], fields: [busRouteId], onDelete: Restrict)
+  busRouteTicketBookingTransaction   BusRouteTicketBookingTransaction @relation(references: [id], fields: [busRouteTicketBookingTransactionId], onDelete: Restrict)
+}
