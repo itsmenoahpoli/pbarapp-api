@@ -55,7 +55,7 @@ async function bootstrap() {
   const swaggerDocument = SwaggerModule.createDocument(app, swaggerConfig);
 
   SwaggerModule.setup('docs/api', app, swaggerDocument, {
-    customSiteTitle: 'CUL Transport API Swagger Documentation',
+    customSiteTitle: 'PBAR App API Swagger Documentation',
   });
 
   const port = process.env.PORT || 3000;
