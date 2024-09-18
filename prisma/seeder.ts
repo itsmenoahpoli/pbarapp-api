@@ -23,7 +23,7 @@ async function populateDatabase() {
         data: {
           firstName: role,
           lastName: 'account',
-          email: `${role}@cultransport.com`,
+          email: `${role}@pbarapp.com`,
           password,
         },
       }),
@@ -33,7 +33,6 @@ async function populateDatabase() {
 
 async function seed() {
   await populateDatabase();
-  // clearDatabase();
 }
 
 seed()
